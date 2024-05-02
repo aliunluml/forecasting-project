@@ -46,7 +46,7 @@ class GP():
         # {x_1:[y_11,y_12,y_13],}
         self.data=dict()
 
-
+    # only used for the marginal predictive now
     def mean_func(xs):
         keys=self.data.keys()
         mu=lambda x: np.array(self.data[x]).mean() if x in keys else self.prior.mean
@@ -70,13 +70,19 @@ class GP():
     def update_joint(self,xs_star,ys_star):
         xs=self.data.keys()
 
+        filter=lambda x_star:x_star not in xs
+        vfilter=np.vectorize(filter)
+        mask=vfilter(xs_star)
+        xs_star=xs_star[mask]
+
         K_22=np.array([[self.kernel(x_i,x_j) for x_j in xs_star] for x_i in xs_star])
         K_21=np.array([[self.kernel(x_i,x_j) for x_j in xs] for x_i in xs_star])
         K_12=K_21.T
         K_11=self.joint_dist.covariance
 
         covariance_star=np.vstack((np.hstack((K_11,K_12)),np.hstack((K_21,K_22))))
-        mean_star=np.append(self.joint_dist.mean,ys_star)
+        mean_star=np.append(...,ys_star)
+        # mean_star=np.append(self.joint_dist.mean,ys_star)
 
         self.joint_dist.mean=mean_star
         self.joint_dist.covariance=covariance_star
