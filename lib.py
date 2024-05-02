@@ -37,75 +37,83 @@ class MultivariateNormal():
 
 
 class GP():
-    def __init__(self,mean_func, cov_func, prior):
+    def __init__(self,mean_func, cov_func, prior=Normal(0,1)):
         super(GP,self).__init__()
-        self.mean_func=mean_func
-        self.data=dict()
-        def mean_func(x):
-            # datetime objects are immutable so can be used as keys. They can also be compared.
-            assert isinstance(x,dt.datetime)
-            # keys should not be empty because initially a constant prior mean is going to be assigned.
-            keys=self.data.keys()
-
-            # average
-            if x in keys:
-                pass
-            # intrapolate
-            elif (x<max(keys) and x>min(keys)):
-                pass
-            # extrapolate
-            else:
-                pass
 
         self.kernel=cov_func
-        self.dist=prior
+        self.joint_dist=prior
+        self.prior_dist=prior
+        self.data=dict()
 
 
-    def sample(self,size):
-        fs=self.dist.sample(size)
-        return fs
+    def mean_func(xs):
+        # datetime objects are immutable so can be used as keys. They can also be compared.
+        assert isinstance(x,dt.datetime)
+        # keys should not be empty because initially a constant prior mean is going to be assigned.
 
-    def joint(self,xs_star,ys_star):
+        def mu(x):
+            keys=self.data.keys()
+            # average multiple observations for a given input
+            if x in keys:
+                marginal_mean=np.array(self.data[x]).mean()
+            # intrapolate
+            elif (x<max(keys) and x>min(keys)):
+                marginal_mean=self.prior.mean
+            # extrapolate
+            else:
+                marginal_mean=self.prior.mean
+
+            return marginal_mean
+
+        return np.array([mu(x) for x in xs])
+
+    # def sample(self,size):
+    #     fs=self.dist.sample(size)
+    #     return fs
+
+    def update_joint(self,xs,ys,xs_star,ys_star):
         K_22=np.array([[kernel(x_i,x_j) for x_j in xs_star] for x_i in xs_star])
-        K_21=np.array([[kernel(x_i,x_j) for x_j in self.xs] for x_i in xs_star])
+        K_21=np.array([[kernel(x_i,x_j) for x_j in xs] for x_i in xs_star])
         K_12=K_21.T
-        K_11=self.dist.covariance
+        K_11=self.joint_dist.covariance
 
         covariance_star=np.vstack((np.hstack((K_11,K_12)),np.hstack((K_21,K_22))))
-        mean_star=np.append(self.dist.mean,self.mean_func(xs_star))
+        mean_star=np.append(self.mean_func(xs),self.mean_func(xs_star))
 
-        # self.dist.mean=mean_star
-        # self.dist.covariance=covariance_star
+        self.joint_dist.mean=mean_star
+        self.joint_dist.covariance=covariance_star
 
-        joint_dist=MultivariateNormal(mean_star,covariance_star)
+        for x_star,y_star in zip(xs_star,ys_star):
+            keys=self.data.keys()
+            if x_star in keys:
+                self.data[x]
 
-        return joint_dist
 
     # def infer(self,xs_star):
-    def posterior(self,xs_star):
+    def get_marginal(self,xs,ys,xs_star):
         K_22=np.array([[kernel(x_i,x_j) for x_j in xs_star] for x_i in xs_star])
-        K_21=np.array([[kernel(x_i,x_j) for x_j in self.xs] for x_i in xs_star])
+        K_21=np.array([[kernel(x_i,x_j) for x_j in xs] for x_i in xs_star])
         K_12=K_21.T
-        K_11=self.dist.covariance
+        K_11=self.joint_dist.covariance
 
-        conditional_mean_star=self.mean_func(xs_star)+K_21@np.linalg(K_11)@(self.ys-self.dist.mean)
+        conditional_mean_star=self.mean_func(xs_star)+K_21@np.linalg(K_11)@(ys-self.mean_func(xs))
         conditional_covariance_star=K_22-K_21@np.linalg(K_11)@K_21.T
 
         predictive_dist=MultivariateNormal(conditional_mean_star,conditional_covariance_star)
 
         return predictive_dist
 
-    get_posterior(self,xs_star):
-        self.fit(xs_star)
-
-
-
-        self.dist.mean
-        conditional_covariance_star=
-        posterior=MultivariateNormal()
-
-    def infer(self,xs_star):
-        pass
+    # get_posterior(self,xs_star):
+    #     self.fit(xs_star)
+    #
+    #
+    #
+    #     self.dist.mean
+    #     conditional_covariance_star=
+    #     posterior=MultivariateNormal()
+    #
+    # def infer(self,xs_star):
+    #     pass
 
 # what size to use for the prior? 5?
 # p=Normal(np.zeroes(5),np.diag(np.ones(5)))
