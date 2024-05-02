@@ -43,7 +43,7 @@ class GP():
         self.kernel=cov_func
         self.joint_dist=prior
         self.prior_dist=prior
-        # {x_1:[y_11,y_12,y_13],}
+        # {x_1:[y_11,y_12,y_13],x_2:[y_2],...}
         self.data=dict()
 
     # only used for the marginal predictive now
@@ -67,13 +67,24 @@ class GP():
                 self.data[x]=[y]
 
 
-    def update_joint(self,xs_star,ys_star):
+    def remove_data(xs,ys):
+        keys=self.data.keys()
+        for x,y in zip(xs,ys):
+            if x in keys:
+                self.data[x].remove(y)
+                del self.data[x]
+            else:
+                pass
+
+
+    def get_joint(self,xs_star,ys_star):
         xs=self.data.keys()
 
         filter=lambda x_star:x_star not in xs
         vfilter=np.vectorize(filter)
         mask=vfilter(xs_star)
         xs_new=xs_star[mask]
+        ys_new=ys_star[mask]
 
         K_22=np.array([[self.kernel(x_i,x_j) for x_j in xs_new] for x_i in xs_new])
         K_21=np.array([[self.kernel(x_i,x_j) for x_j in xs] for x_i in xs_new])
@@ -82,19 +93,35 @@ class GP():
 
         covariance_star=np.vstack((np.hstack((K_11,K_12)),np.hstack((K_21,K_22))))
 
-        # We need to average the observations for common x values. We use the data dict for this.
-        self.add_data(xs_star,ys_star)
-        mean_star=np.append(self.mean_func(xs),self.mean_func(xs_star))
-        # When there are no common x values
-        # mean_star=np.append(self.joint_dist.mean,ys_star)
 
-        self.joint_dist.mean=mean_star
-        self.joint_dist.covariance=covariance_star
-        # self.add_data(xs_star,ys_star)
+
+        # self.joint_dist.mean[np.invert(mask)]
+        # [self.data]
+
+        # We need to average all the observations for common x values. We use the data dict for this.
+        self.add_data(xs_star,ys_star)
+        mean_star=np.append(self.mean_func(xs),self.mean_func(xs_new))
+        self.remove_data(xs_star,ys_star)
+
+        # The following does not work when there are common x values in xs_star
+        # mean_star=np.append(self.joint_dist.mean,ys_new)
+
+        return MultivariateNormal(mean_star,covariance_star)
+
+
+    def update_joint(self,xs_star,ys_star):
+        new_joint=self.get_joint(xs_star,ys_star)
+        self.joint_dist=new_joint
+        self.add_data(xs_star,ys_star)
 
 
     # def infer(self,xs_star):
     def get_marginal(self,xs,ys,xs_star):
+        #
+        # xs=self.data.keys()
+        # ys=np.array([self.data[x]])
+
+
         K_22=np.array([[self.kernel(x_i,x_j) for x_j in xs_star] for x_i in xs_star])
         K_21=np.array([[self.kernel(x_i,x_j) for x_j in xs] for x_i in xs_star])
         K_12=K_21.T
