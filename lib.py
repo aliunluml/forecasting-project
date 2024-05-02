@@ -81,8 +81,8 @@ class GP():
         K_11=self.joint_dist.covariance
 
         covariance_star=np.vstack((np.hstack((K_11,K_12)),np.hstack((K_21,K_22))))
-        mean_star=np.append(...,ys_star)
-        # mean_star=np.append(self.joint_dist.mean,ys_star)
+        # mean_star=np.append(...,ys_star)
+        mean_star=np.append(self.joint_dist.mean,ys_star)
 
         self.joint_dist.mean=mean_star
         self.joint_dist.covariance=covariance_star
