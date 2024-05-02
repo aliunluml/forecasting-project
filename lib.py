@@ -70,8 +70,8 @@ class GP():
     def update_joint(self,xs_star,ys_star):
         xs=self.data.keys()
 
-        K_22=np.array([[kernel(x_i,x_j) for x_j in xs_star] for x_i in xs_star])
-        K_21=np.array([[kernel(x_i,x_j) for x_j in xs] for x_i in xs_star])
+        K_22=np.array([[self.kernel(x_i,x_j) for x_j in xs_star] for x_i in xs_star])
+        K_21=np.array([[self.kernel(x_i,x_j) for x_j in xs] for x_i in xs_star])
         K_12=K_21.T
         K_11=self.joint_dist.covariance
 
@@ -85,8 +85,8 @@ class GP():
 
     # def infer(self,xs_star):
     def get_marginal(self,xs,ys,xs_star):
-        K_22=np.array([[kernel(x_i,x_j) for x_j in xs_star] for x_i in xs_star])
-        K_21=np.array([[kernel(x_i,x_j) for x_j in xs] for x_i in xs_star])
+        K_22=np.array([[self.kernel(x_i,x_j) for x_j in xs_star] for x_i in xs_star])
+        K_21=np.array([[self.kernel(x_i,x_j) for x_j in xs] for x_i in xs_star])
         K_12=K_21.T
         K_11=self.joint_dist.covariance
 
