@@ -71,8 +71,10 @@ class GP():
         keys=self.data.keys()
         for x,y in zip(xs,ys):
             if x in keys:
-                self.data[x].remove(y)
-                del self.data[x]
+                ys_x=self.data[x]
+                ys_x.remove(y)
+                if len(ys_x)==0:
+                    del self.data[x]
             else:
                 pass
 
@@ -93,18 +95,16 @@ class GP():
 
         covariance_star=np.vstack((np.hstack((K_11,K_12)),np.hstack((K_21,K_22))))
 
-
-
-        # self.joint_dist.mean[np.invert(mask)]
-        # [self.data]
+        # This hardcodes mean_func and violates the seperation of concerns principle
+        # joint_mean=self.joint_dist.mean.copy()
+        # nums=np.array([len(self.data[x]) for x in xs])
+        # joint_mean[np.invert(mask)]=(joint_mean[np.invert(mask)]+ys_star[np.invert(mask)])/(nums+np.ones(len(xs)))
+        # mean_star=np.append(joint_mean,ys_new)
 
         # We need to average all the observations for common x values. We use the data dict for this.
         self.add_data(xs_star,ys_star)
         mean_star=np.append(self.mean_func(xs),self.mean_func(xs_new))
         self.remove_data(xs_star,ys_star)
-
-        # The following does not work when there are common x values in xs_star
-        # mean_star=np.append(self.joint_dist.mean,ys_new)
 
         return MultivariateNormal(mean_star,covariance_star)
 
