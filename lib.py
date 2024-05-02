@@ -43,46 +43,44 @@ class GP():
         self.kernel=cov_func
         self.joint_dist=prior
         self.prior_dist=prior
+        # {x_1:[y_11,y_12,y_13],}
         self.data=dict()
 
 
     def mean_func(xs):
-        # datetime objects are immutable so can be used as keys. They can also be compared.
-        assert isinstance(x,dt.datetime)
-        # keys should not be empty because initially a constant prior mean is going to be assigned.
         keys=self.data.keys()
+        mu=lambda x: np.array(self.data[x]).mean() if x in keys else self.prior.mean
+        vmu=np.vectorize(mu)
 
-        def mu(x):
-            # average multiple observations for a given input
-            if x in keys:
-                marginal_mean=np.array(self.data[x]).mean()
-            else:
-                marginal_mean=self.prior.mean
-
-            return marginal_mean
-
-        return np.array([mu(x) for x in xs])
+        return vmu(xs)
 
     # def sample(self,size):
     #     fs=self.dist.sample(size)
     #     return fs
 
-    def update_joint(self,xs,ys,xs_star,ys_star):
+    def add_data(xs,ys):
+        keys=self.data.keys()
+        for x,y in zip(xs,ys):
+            if x in keys:
+                self.data[x].append(y)
+            else:
+                self.data[x]=[y]
+
+
+    def update_joint(self,xs_star,ys_star):
+        xs=self.data.keys()
+
         K_22=np.array([[kernel(x_i,x_j) for x_j in xs_star] for x_i in xs_star])
         K_21=np.array([[kernel(x_i,x_j) for x_j in xs] for x_i in xs_star])
         K_12=K_21.T
         K_11=self.joint_dist.covariance
 
         covariance_star=np.vstack((np.hstack((K_11,K_12)),np.hstack((K_21,K_22))))
-        mean_star=np.append(self.mean_func(xs),self.mean_func(xs_star))
+        mean_star=np.append(self.joint_dist.mean,ys_star)
 
         self.joint_dist.mean=mean_star
         self.joint_dist.covariance=covariance_star
-
-        for x_star,y_star in zip(xs_star,ys_star):
-            keys=self.data.keys()
-            if x_star in keys:
-                self.data[x]
+        self.add_data(xs_star,ys_star)
 
 
     # def infer(self,xs_star):
