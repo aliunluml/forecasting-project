@@ -50,16 +50,12 @@ class GP():
         # datetime objects are immutable so can be used as keys. They can also be compared.
         assert isinstance(x,dt.datetime)
         # keys should not be empty because initially a constant prior mean is going to be assigned.
+        keys=self.data.keys()
 
         def mu(x):
-            keys=self.data.keys()
             # average multiple observations for a given input
             if x in keys:
                 marginal_mean=np.array(self.data[x]).mean()
-            # intrapolate
-            elif (x<max(keys) and x>min(keys)):
-                marginal_mean=self.prior.mean
-            # extrapolate
             else:
                 marginal_mean=self.prior.mean
 
