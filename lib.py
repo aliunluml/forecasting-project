@@ -73,17 +73,19 @@ class GP():
         filter=lambda x_star:x_star not in xs
         vfilter=np.vectorize(filter)
         mask=vfilter(xs_star)
-        xs_star=xs_star[mask]
+        xs_new=xs_star[mask]
 
-        K_22=np.array([[self.kernel(x_i,x_j) for x_j in xs_star] for x_i in xs_star])
-        K_21=np.array([[self.kernel(x_i,x_j) for x_j in xs] for x_i in xs_star])
+        K_22=np.array([[self.kernel(x_i,x_j) for x_j in xs_new] for x_i in xs_new])
+        K_21=np.array([[self.kernel(x_i,x_j) for x_j in xs] for x_i in xs_new])
         K_12=K_21.T
         K_11=self.joint_dist.covariance
 
         covariance_star=np.vstack((np.hstack((K_11,K_12)),np.hstack((K_21,K_22))))
 
+        # We need to average the observations for common x values. We use the data dict for this.
         self.add_data(xs_star,ys_star)
         mean_star=np.append(self.mean_func(xs),self.mean_func(xs_star))
+        # When there are no common x values
         # mean_star=np.append(self.joint_dist.mean,ys_star)
 
         self.joint_dist.mean=mean_star
