@@ -52,11 +52,14 @@ class GP():
         # {x_1:[y_11,y_12,y_13],x_2:[y_2],...}
         self.data=dict()
 
-
+    # self.joint_dist.mean == self.mean_func(self.data.keys())
     def mean_func(xs):
         keys=self.data.keys()
         mu=lambda x: np.array(self.data[x]).mean() if x in keys else self.prior.mean
         vmu=np.vectorize(mu)
+        # intrapolate
+        # extrapolate
+        # For now, these are implicitly done by the kernel matrices in get_posterior
 
         return vmu(xs)
 
@@ -85,151 +88,65 @@ class GP():
                 pass
 
 
-    def update_prior(self,xs_star,ys_star):
-        # xs=self.data.keys()
-
-        # filter=lambda x_star:x_star not in xs
-        # vfilter=np.vectorize(filter)
-        # mask=vfilter(xs_star)
-        # xs_new=xs_star[mask]
-        # ys_new=ys_star[mask]
-        #
-        # K_22=np.array([[self.kernel(x_i,x_j) for x_j in xs_new] for x_i in xs_new])
-        # K_21=np.array([[self.kernel(x_i,x_j) for x_j in xs] for x_i in xs_new])
-        # K_12=K_21.T
-        # K_11=self.joint_dist.covariance
-        #
-        # covariance_star=np.vstack((np.hstack((K_11,K_12)),np.hstack((K_21,K_22))))
-
-        # This hardcodes mean_func and violates the seperation of concerns principle
-        # joint_mean=self.joint_dist.mean.copy()
-        # nums=np.array([len(self.data[x]) for x in xs])
-        # joint_mean[np.invert(mask)]=(joint_mean[np.invert(mask)]+ys_star[np.invert(mask)])/(nums+np.ones(len(xs)))
-        # mean_star=np.append(joint_mean,ys_new)
-
-        # We need to average all the observations for common x values in xs and xs_star. We use the data dict for this.
-        self.add_data(xs_star,ys_star)
-        xs=self.data.keys()
-        mean_star=self.mean_func(xs)
-        covariance_star=np.array([[self.kernel(x_i,x_j) for x_j in xs] for x_i in xs])
-        if isinstance(self.prior_dist,Normal):
-            self.prior_dist=MultivariateNormal(mean_star,covariance_star)
-        else:
-            self.prior_dist.mean=mean_star
-            self.prior_dist.covariance=covariance_star
-        # self.remove_data(xs_star,ys_star)
-
-        # return MultivariateNormal(mean_star,covariance_star)
-
-
-    def update_joint(self,xs_star,ys_star):
-        new_joint=self.get_joint(xs_star,ys_star)
-        self.joint_dist=new_joint
-        self.add_data(xs_star,ys_star)
-
-    def get_joint(self,xs_star,ys_star,xs=self.data.keys(),ys=None):
-        if ys is None:
-            # No need for averaging, just use the prior mean for xs_star
-        else:
-            # need masking filtering etc. as before.
-
-
-
-
-        xs=self.data.keys()
-
-        filter=lambda x_star:x_star not in xs
+    def update_joint(self,xs,ys):
+        xs_old=self.data.keys()
+        filter=lambda x:x not in xs_old
         vfilter=np.vectorize(filter)
-        mask=vfilter(xs_star)
-        xs_new=xs_star[mask]
-        ys_new=ys_star[mask]
+        mask=vfilter(xs)
+        xs_star=xs[mask]
 
-        K_22=np.array([[self.kernel(x_i,x_j) for x_j in xs_new] for x_i in xs_new])
-        K_21=np.array([[self.kernel(x_i,x_j) for x_j in xs] for x_i in xs_new])
+
+        # We need to average all the observations for common x values in xs and old_xs. We use the data dict for this.
+        self.add_data(xs,ys)
+        mean_star=self.mean_func(xs)
+
+        # Avoid recomputing te kernel for unchanged indices
+        # covariance_star=np.array([[self.kernel(x_i,x_j) for x_j in xs] for x_i in xs])
+
+        K_22=np.array([[self.kernel(x_i,x_j) for x_j in xs_star] for x_i in xs_star])
+        K_21=np.array([[self.kernel(x_i,x_j) for x_j in xs_old] for x_i in xs_star])
         K_12=K_21.T
-        K_11=self.joint_dist.covariance
-
+        K_11=np.array(self.joint_dist.variance) if isinstance(self.joint_dist,Normal) else self.joint_dist.covariance
         covariance_star=np.vstack((np.hstack((K_11,K_12)),np.hstack((K_21,K_22))))
 
-        # This hardcodes mean_func and violates the seperation of concerns principle
-        # joint_mean=self.joint_dist.mean.copy()
-        # nums=np.array([len(self.data[x]) for x in xs])
-        # joint_mean[np.invert(mask)]=(joint_mean[np.invert(mask)]+ys_star[np.invert(mask)])/(nums+np.ones(len(xs)))
-        # mean_star=np.append(joint_mean,ys_new)
 
-        # self.add_data(xs_star,ys_star)
-        # mean_star=np.append(self.mean_func(xs),self.mean_func(xs_new))
-        # self.remove_data(xs_star,ys_star)
-
-
-
-
-
-        # return self.joint_dist
-
-
-
-
-
+        if isinstance(self.joint_dist,Normal):
+            self.joint_dist=MultivariateNormal(mean_star,covariance_star)
+        else:
+            self.joint_dist.mean=mean_star
+            self.joint_dist.covariance=covariance_star
 
 
 
     def infer(self,xs_star):
-        # filter=lambda x_star:x_star not in xs
-        # vfilter=np.vectorize(filter)
-        # mask=vfilter(xs_star)
-        # xs_new=xs_star[mask]
-        # ys_new=ys_star[mask]
-
-
-    # xs_star may include either x from xs or x_new from xs_new
-    def get_predictive(self,xs_star,ys_star):
         xs=self.data.keys()
-        # ys=np.array([self.data[x]])
-
-
-        filter=lambda x_star:x_star not in xs
-        vfilter=np.vectorize(filter)
-        mask=vfilter(xs_star)
-        xs_new=xs_star[mask]
-        ys_new=ys_star[mask]
-
-        xs_old=xs_star[np.invert(mask)]
-        ys_old=ys_star[np.invert(mask)]
-        get_marginal(xs_new,ys_new,xs,ys_old)
-
-
-    # latter two arguments are the indices marginalized out/conditioned on.
-    def get_marginal(self,xs_star,ys_star,xs,ys):
-        if ys is None:
-            # No need for averaging, just use the prior mean for mean_star
-        else:
-            #
-
-
-        K_22=np.array([[self.kernel(x_i,x_j) for x_j in xs_new] for x_i in xs_new])
-        K_21=np.array([[self.kernel(x_i,x_j) for x_j in xs] for x_i in xs_new])
-        K_12=K_21.T
-        K_11=self.joint_dist.covariance
-
-        conditional_mean_star=self.mean_func(xs_new)+K_21@np.linalg(K_11)@(ys-self.mean_func(xs))
-        conditional_covariance_star=K_22-K_21@np.linalg(K_11)@K_21.T
-
-        predictive_dist=MultivariateNormal(conditional_mean_star,conditional_covariance_star)
+        predictive_dist=self.get_marginal(xs_star,xs,self.joint_dist.mean)
 
         return predictive_dist
 
-    # get_posterior(self,xs_star):
-    #     self.fit(xs_star)
-    #
-    #
-    #
-    #     self.dist.mean
-    #     conditional_covariance_star=
-    #     posterior=MultivariateNormal()
-    #
-    # def infer(self,xs_star):
-    #     pass
+
+    # xs_star may include either x from xs or x_new from xs_new
+    # latter two arguments are the indices marginalized out/conditioned on.
+    # def get_marginal(self,xs_new,ys_new,xs,ys):
+    def get_marginal(self,xs_star,xs,ys):
+
+        K_22=np.array([[self.kernel(x_i,x_j) for x_j in xs_star] for x_i in xs_star])
+        K_21=np.array([[self.kernel(x_i,x_j) for x_j in xs] for x_i in xs_star])
+        K_12=K_21.T
+        K_11=self.joint_dist.covariance
+
+        conditional_mean_star=self.prior.mean*np.ones(len(xs_star))+K_21@np.linalg(K_11)@(ys-self.prior.mean*np.ones(len(xs)))
+        # The following is incorrect:
+        # conditional_mean_star=self.mean_func(xs_star)+K_21@np.linalg(K_11)@(ys-self.mean_func(xs))
+        conditional_covariance_star=K_22-K_21@np.linalg(K_11)@K_21.T
+
+        marginal_dist=MultivariateNormal(conditional_mean_star,conditional_covariance_star)
+
+        return marginal_dist
+
+
+
+
 
 # what size to use for the prior? 5?
 # p=Normal(np.zeroes(5),np.diag(np.ones(5)))
