@@ -135,7 +135,12 @@ class GP():
         K_12=K_21.T
         K_11=self.joint_dist.covariance
 
-        conditional_mean_star=self.prior.mean*np.ones(len(xs_star))+K_21@np.linalg(K_11)@(ys-self.prior.mean*np.ones(len(xs)))
+
+        # MULTIPLE THINGS GOING ON HERE!
+        # Interpolation by kernel matrices
+        # Stationarity assumption. Hence, ys-(prior mean)
+        # Very implicit stuff...
+        conditional_mean_star=self.prior_dist.mean*np.ones(len(xs_star))+K_21@np.linalg(K_11)@(ys-self.prior_dist.mean*np.ones(len(xs)))
         # The following is incorrect:
         # conditional_mean_star=self.mean_func(xs_star)+K_21@np.linalg(K_11)@(ys-self.mean_func(xs))
         conditional_covariance_star=K_22-K_21@np.linalg(K_11)@K_21.T
