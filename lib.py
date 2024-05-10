@@ -52,17 +52,6 @@ class GP():
         # {x_1:[y_11,y_12,y_13],x_2:[y_2],...}
         self.data=dict()
 
-    # # self.joint_dist.mean == self.mean_func(self.data.keys())
-    # def mean_func(xs):
-    #     keys=self.data.keys()
-    #     mu=lambda x: np.array(self.data[x]).mean() if x in keys else self.prior.mean
-    #     vmu=np.vectorize(mu)
-    #     # intrapolate
-    #     # extrapolate
-    #     # For now, these are implicitly done by the kernel matrices in get_posterior
-    #
-    #     return vmu(xs)
-
     def vmean_func(xs_star):
 
         def mean_func(x_star):
@@ -113,7 +102,6 @@ class GP():
         mask=vfilter(xs)
         xs_star=xs[mask]
 
-
         # We need to average all the observations for common x values in xs and old_xs. We use the data dict for this.
         self.add_data(xs,ys)
         mean_star=self.vmean_func(xs)
@@ -126,7 +114,6 @@ class GP():
         K_12=K_21.T
         K_11=np.array(self.joint_dist.variance) if isinstance(self.joint_dist,Normal) else self.joint_dist.covariance
         covariance_star=np.vstack((np.hstack((K_11,K_12)),np.hstack((K_21,K_22))))
-
 
         if isinstance(self.joint_dist,Normal):
             self.joint_dist=MultivariateNormal(mean_star,covariance_star)
@@ -153,14 +140,7 @@ class GP():
         K_12=K_21.T
         K_11=self.joint_dist.covariance
 
-
-        # MULTIPLE THINGS GOING ON HERE!
-        # Interpolation by kernel matrices
-        # Stationarity assumption. Hence, ys-(prior mean)
-        # Very implicit stuff...
         conditional_mean_star=self.vmean_func(xs_star)+K_21@np.linalg.inv(K_11)@(ys-self.vmean_func(xs)))
-        # The following is incorrect:
-        # conditional_mean_star=self.mean_func(xs_star)+K_21@np.linalg(K_11)@(ys-self.mean_func(xs))
         conditional_covariance_star=K_22-K_21@np.linalg(K_11)@K_21.T
 
         marginal_dist=MultivariateNormal(conditional_mean_star,conditional_covariance_star)
