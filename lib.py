@@ -21,11 +21,12 @@ class Normal():
         self.variance=variance
 
     def sample(self,size):
-        result = np.random.Generator.normal(self.mean,np.sqrt(self.variance),size)
+        result=np.random.Generator.normal(self.mean,np.sqrt(self.variance),size)
         return result
 
     def log_prob(self,x):
-        pass
+        result=np.log(1/(np.sqrt(np.pi*self.variance)))-(x-self.mean)**2/2
+        return result
 
 
 class MultivariateNormal():
@@ -34,16 +35,18 @@ class MultivariateNormal():
         self.covariance=covariance
 
     def sample(self,size):
-        result np.random.multivariate_normal(self.mean,self.covariance,size)
+        result=np.random.multivariate_normal(self.mean,self.covariance,size)
         return result
 
     def log_prob(self,x):
-        pass
+        dim=len(self.mean)
+        result=np.log(1/(np.sqrt(np.pi**dim)*np.linalg.det(self.covariance)))-((x-self.mean).T@self.covariance@(x-self.mean))/2
+        return result
 
 
 
 class GP():
-    def __init__(self,mean_func, cov_func, prior=Normal(0,1)):
+    def __init__(self, cov_func, prior=Normal(0,1)):
         super(GP,self).__init__()
 
         self.kernel=cov_func
@@ -70,9 +73,6 @@ class GP():
         vmean_func=np.vectorize(mean_func)
         return vmean_func
 
-    # def sample(self,size):
-    #     fs=self.dist.sample(size)
-    #     return fs
 
     def add_data(xs,ys):
         keys=self.data.keys()
@@ -120,7 +120,6 @@ class GP():
         else:
             self.joint_dist.mean=mean_star
             self.joint_dist.covariance=covariance_star
-
 
 
     def infer(self,xs_star):
