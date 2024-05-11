@@ -76,7 +76,8 @@ class GaussianProcess():
                 return self.prior_dist.mean+K_21@np.linalg.inv(K_11)@(np.array(self.data[xs]).mean()-self.prior_dist.mean)
 
         vmean_func=np.vectorize(mean_func)
-        return vmean_func
+        result= vmean_func(xs_star)
+        return result
 
 
     def add_data(self,xs,ys):
