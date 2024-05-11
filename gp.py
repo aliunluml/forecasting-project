@@ -1,5 +1,6 @@
 import numpy as np
-import datetime as dt
+
+
 
 def periodic_kernel(x_1,x_2,sigma,timescale,period):
     result= sigma**2*np.exp(-(2/timescale**2)*np.sin(np.pi*np.abs(x_1-x_2)/period)**2)

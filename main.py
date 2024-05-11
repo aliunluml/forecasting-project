@@ -134,9 +134,9 @@ def main():
     xs=train_df.index.to_numpy()
     ys=train_df['exitNominationAmount'].to_numpy()
 
-    model.update_joint(xs,ys)
+    # model.update_joint(xs,ys)
 
-    print(test_df.index.head())
+    # print(test_df.index.head())
 
     # model.infer()
 
