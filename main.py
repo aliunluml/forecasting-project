@@ -137,6 +137,9 @@ def main():
     model.update_joint(xs[:10],ys[:10])
     # Respective pandas indices from the original df rows.
     xs_star=test_df.index.to_numpy()
+    print(xs[:10])
+    print(ys[:10])
+    print(xs_star[:3])
 
     model.infer(xs_star[:3])
 

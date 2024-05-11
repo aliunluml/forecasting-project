@@ -63,7 +63,7 @@ class GaussianProcess():
     def vmean_func(self,xs_star):
 
         def mean_func(x_star):
-            xs=self.data.keys()
+            xs=np.array(list(self.data.keys()))
             # return existing point mean
             if x_star in xs:
                 return np.array(self.data[x_star]).mean()
@@ -117,7 +117,7 @@ class GaussianProcess():
 
 
     def infer(self,xs_star):
-        xs=self.data.keys()
+        xs=np.array(list(self.data.keys()))
         predictive_dist=self.get_marginal(xs_star,xs,self.joint_dist.mean)
 
         return predictive_dist
@@ -134,7 +134,7 @@ class GaussianProcess():
         K_11=self.joint_dist.covariance
 
         conditional_mean_star=self.vmean_func(xs_star)+K_21@np.linalg.inv(K_11)@(ys-self.vmean_func(xs))
-        conditional_covariance_star=K_22-K_21@np.linalg(K_11)@K_21.T
+        conditional_covariance_star=K_22-K_21@np.linalg.inv(K_11)@K_21.T
 
         marginal_dist=MultivariateNormal(conditional_mean_star,conditional_covariance_star)
 
