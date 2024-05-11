@@ -3,6 +3,10 @@ import datetime as dt
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+from gp import *
+from lib import *
+
+NUM_FOLDS=5
 
 
 # TR timezone is UTC+3 since 2016
@@ -25,12 +29,15 @@ payload={
     }
   }
 }
+
+# HTTP POST request with the data
+# Disconnect from the current Colab instance and connect to another one if you get HTTPConnection erros.
 response = requests.post('https://seffaflik.epias.com.tr/natural-gas-service/v1/transmission/data/exit-nomination',json=payload)
 
 if response.status_code!=200:
-  exit
+    exit
 else:
-  pass
+    pass
 
 
 data=response.json()
@@ -40,8 +47,6 @@ df['date']=df['date'].map(lambda x: dt.datetime.fromisoformat(x))
 
 print(df.head())
 print(f"Dataset size: {len(df)}")
-# HTTP POST request with the data
-# Disconnect from the current Colab instance and connect to another one if you get HTTPConnection erros.
 
 
 # Train-test split is from 1 April 2023 onwards
@@ -92,28 +97,6 @@ ax2.set_ylabel('Transmission Output Volume ($Sm^3$)')
 plt.show()
 
 
-# https://waterprogramming.wordpress.com/2018/09/04/implementation-of-the-moving-average-filter-using-convolution/
-def moving_average(data, window_size):
-    window_size = min(window_size, len(data))
-    # boxcar smoothing via convolution with a rectangle of width 2M+1
-    return np.convolve(data, np.ones(window_size) / window_size, mode='valid')
-
-# https://otexts.com/fpp3/classical-decomposition.html
-def decompose_timeseries(data, period):
-    n = len(data)
-
-    trend_window = period
-    trend = moving_average(data, trend_window)
-    trend = np.pad(trend, (trend_window // 2, n - len(trend) - trend_window // 2), mode='edge')
-
-    detrended = data - trend
-    seasonal = np.array([np.mean(detrended[i::period]) for i in range(period)])
-    seasonal = np.tile(seasonal, n // period + 1)[:n]
-
-    residual = data - trend - seasonal
-
-    return trend, seasonal, residual
-
 def plot_components(dates, data, trend, seasonal, residual):
     plt.figure(figsize=(14, 8))
 
@@ -151,28 +134,18 @@ plot_components(df['date'], data_series, yearly_trend, yearly_seasonal, yearly_r
 monthly_trend, monthly_seasonal, monthly_residual = decompose_timeseries(data_series.values, 31)
 plot_components(df['date'], data_series, monthly_trend, monthly_seasonal, monthly_residual)
 
-#ACF
 
-def autocorr(x, max_lags=365):
-    n = len(x)
-    mean_x = np.mean(x)
-    var_x = np.var(x)
-    x = x - mean_x
-    autocorr_full = np.correlate(x, x, mode='full')[-n:]
-    autocorr = autocorr_full/(var_x*np.arange(n, 0, -1))
-
-    lags = np.arange(max_lags + 1)
-    plt.figure(figsize=(10, 5))
-    plt.stem(lags, autocorr[:max_lags + 1], use_line_collection=True)
-    plt.title('Autocorrelation Function')
-    plt.xlabel('Lags')
-    plt.ylabel('Autocorrelation')
-    plt.ylim(-1, 1)
-    plt.show()
-
-    return autocorr
-
+max_lags=365
 data_series = df['exitNominationAmount'].values
-autocorrelation_values = autocorr(data_series)
+autocorrelation_values = autocorr(data_series,max_lags)
 
-autocorr(data_series)
+lags = np.arange(max_lags + 1)
+plt.figure(figsize=(10, 5))
+plt.stem(lags, autocorrelation_values[:max_lags + 1], use_line_collection=True)
+plt.title('Autocorrelation Function')
+plt.xlabel('Lags')
+plt.ylabel('Autocorrelation')
+plt.ylim(-1, 1)
+plt.show()
+
+# autocorr(data_series)
