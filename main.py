@@ -76,7 +76,7 @@ def main():
     start_date=dt.datetime(2019,4,1,tzinfo=trtz)
     # 1 April 2024
     end_date=dt.datetime(2024,4,1,tzinfo=trtz)
-
+    # Using the EPIAS API to fetch the Turkish natural gas transmission dataset
     df=fetch_epias_exit_nomination(start_date,end_date)
 
     print(df.head())
@@ -116,6 +116,29 @@ def main():
 
     autocorrelation_values = autocorr(ys,max_lags=365)
     figure3(autocorrelation_values,max_lags=365)
+
+    # =============================GP REGRESSION=============================
+
+    # Initial GP hyperparameters before tuning
+    variance=1e-2
+    a_year,a_quarter,a_month,a_week=(1e-3,5e-2,1e-1,0.2)
+    b=0.5
+
+    gp_hyperparams=np.array([variance,a_year,a_quarter,a_month,a_week,b])
+
+    # Sum of kernels for yearly, quarterly, monthly, weekly periodicities + trend + residual
+    kernel=lambda x_1,x_2: a_year*periodic_kernel(x_1,x_2,sigma=variance,timescale=90,period=365)+a_quarter*periodic_kernel(x_1,x_2,sigma=variance,timescale=30,period=90)+a_month*periodic_kernel(x_1,x_2,sigma=variance,timescale=7,period=30)+a_week*periodic_kernel(x_1,x_2,sigma=variance,timescale=3,period=7)+b*exp_quadratic_kernel(x_1,x_2,sigma=variance,timescale=90)+white_noise_kernel(x_1,x_2,sigma=variance)
+    model=GaussianProcess(kernel)
+
+    # Treating each day as an integer value. We can do this because of the equally distanced daily measurements in the dataset.
+    xs=train_df.index.to_numpy()
+    ys=train_df['exitNominationAmount'].to_numpy()
+
+    model.update_joint(xs,ys)
+
+    print(test_df.index.head())
+
+    # model.infer()
 
 if __name__ == "__main__":
     main()

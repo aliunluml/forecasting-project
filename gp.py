@@ -1,22 +1,24 @@
 import numpy as np
 import datetime as dt
 
-def periodic_kernel(sigma,scale,period):
-    kernel = lambda x_1,x_2: sigma**2*np.exp(-(2/lengthscale**2)*np.sin(np.pi*np.abs(x_1-x_2)/period)**2)
-    return kernel
+def periodic_kernel(x_1,x_2,sigma,timescale,period):
+    result= sigma**2*np.exp(-(2/timescale**2)*np.sin(np.pi*np.abs(x_1-x_2)/period)**2)
+    return result
 
-def white_noise_kernel(sigma):
+def white_noise_kernel(x_1,x_2,sigma):
     # is statement checks if the variable x_1 references the same object with x_2. Not ==
-    kernel = lambda x_1,x_2: sigma**2 if x_1 is x_2 else 0
-    return kernel
+    result = sigma**2 if x_1 is x_2 else 0
+    return result
 
-def exp_quadratic_kernel(sigma,scale):
-    kernel = lambda x_1,x_2: sigma**2*np.exp(-(x_1-x_2)**2/(2*scale**2))
-    return kernel
+def exp_quadratic_kernel(x_1,x_2,sigma,timescale):
+    result= sigma**2*np.exp(-(x_1-x_2)**2/(2*timescale**2))
+    return result
 
 
 class Normal():
     def __init__(self,mean,variance):
+        super(Normal,self).__init__()
+
         self.mean=mean
         self.variance=variance
 
@@ -31,6 +33,8 @@ class Normal():
 
 class MultivariateNormal():
     def __init__(self,mean,covariance):
+        super(MultivariateNormal,self).__init__()
+
         self.mean=mean
         self.covariance=covariance
 
@@ -47,7 +51,7 @@ class MultivariateNormal():
 
 class GaussianProcess():
     def __init__(self, cov_func, prior=Normal(0,1)):
-        super(GP,self).__init__()
+        super(GaussianProcess,self).__init__()
 
         self.kernel=cov_func
         self.joint_dist=prior
@@ -55,7 +59,7 @@ class GaussianProcess():
         # {x_1:[y_11,y_12,y_13],x_2:[y_2],...}
         self.data=dict()
 
-    def vmean_func(xs_star):
+    def vmean_func(self,xs_star):
 
         def mean_func(x_star):
             xs=self.data.keys()
@@ -74,7 +78,7 @@ class GaussianProcess():
         return vmean_func
 
 
-    def add_data(xs,ys):
+    def add_data(self,xs,ys):
         keys=self.data.keys()
         for x,y in zip(xs,ys):
             if x in keys:
@@ -83,7 +87,7 @@ class GaussianProcess():
                 self.data[x]=[y]
 
 
-    def remove_data(xs,ys):
+    def remove_data(self,xs,ys):
         keys=self.data.keys()
         for x,y in zip(xs,ys):
             if x in keys:
