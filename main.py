@@ -134,11 +134,11 @@ def main():
     xs=train_df.index.to_numpy()
     ys=train_df['exitNominationAmount'].to_numpy()
 
-    # model.update_joint(xs,ys)
+    model.update_joint(xs[:10],ys[:10])
+    # Respective pandas indices from the original df rows.
+    xs_star=test_df.index.to_numpy()
 
-    # print(test_df.index.head())
-
-    # model.infer()
+    model.infer(xs_star[:3])
 
 if __name__ == "__main__":
     main()
