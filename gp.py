@@ -1,5 +1,5 @@
 import numpy as np
-
+import copy
 
 
 def periodic_kernel(x_1,x_2,sigma,timescale,period):
@@ -101,7 +101,7 @@ class GaussianProcess():
 
 
     def update_joint(self,xs,ys):
-        xs_old=self.data.keys()
+        xs_old=copy.copy(list(self.data.keys()))
         filter=lambda x:x not in xs_old
         vfilter=np.vectorize(filter)
         mask=vfilter(xs)
