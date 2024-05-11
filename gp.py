@@ -73,7 +73,7 @@ class GaussianProcess():
                 K_21=np.array([[self.kernel(x_star,x_j) for x_j in xs]])
                 K_12=K_21.T
                 K_11=self.joint_dist.covariance
-                return self.prior_dist.mean+K_21@np.linalg.inv(K_11)@(np.array(self.data[xs]).mean()-self.prior_dist.mean)
+                return self.prior_dist.mean+K_21@np.linalg.inv(K_11)@(self.vmean_func(xs)-self.prior_dist.mean)
 
         vmean_func=np.vectorize(mean_func)
         result= vmean_func(xs_star)
