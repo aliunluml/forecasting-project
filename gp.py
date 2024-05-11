@@ -65,15 +65,15 @@ class GaussianProcess():
         def mean_func(x_star):
             xs=self.data.keys()
             # return existing point mean
-            if x_star in keys:
-                return np.array(self.data[x]).mean()
+            if x_star in xs:
+                return np.array(self.data[x_star]).mean()
             # intrapolate/extrapolate
             else:
                 # K_22=np.array([[self.kernel(x_star,x_star)]])
                 K_21=np.array([[self.kernel(x_star,x_j) for x_j in xs]])
                 K_12=K_21.T
                 K_11=self.joint_dist.covariance
-                return self.prior_dist.mean+K_21@np.linalg.inv(K_11)@(np.array(self.data[x]).mean()-self.prior_dist.mean)
+                return self.prior_dist.mean+K_21@np.linalg.inv(K_11)@(np.array(self.data[xs]).mean()-self.prior_dist.mean)
 
         vmean_func=np.vectorize(mean_func)
         return vmean_func
