@@ -131,17 +131,23 @@ def main():
     model=GaussianProcess(kernel)
 
     # Treating each day as an integer value. We can do this because of the equally distanced daily measurements in the dataset.
-    xs=train_df.index.to_numpy()
-    ys=train_df['exitNominationAmount'].to_numpy()
+    xs=train_df.index.to_numpy()[:10]
+    ys=train_df['exitNominationAmount'].to_numpy()[:10]
 
-    model.update_joint(xs[:10],ys[:10])
+    model.update_joint(xs,ys)
     # Respective pandas indices from the original df rows.
-    xs_star=test_df.index.to_numpy()
-    print(xs[:10])
-    print(ys[:10])
-    print(xs_star[:3])
+    xs_star=test_df.index.to_numpy()[:30]
+    # print(xs[:10])
+    # print(ys[:10])
+    # print(xs_star[:3])
 
-    model.infer(xs_star[:3])
+    predictive=model.infer(xs_star)
+    fs=predictive.sample(6)
+    # fig1=plt.subplots()
+    for i in range(6):
+        f=fs[i,:]
+        plt.plot(xs_star,f)
+    plt.show()
 
 if __name__ == "__main__":
     main()
