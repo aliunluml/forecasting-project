@@ -101,30 +101,18 @@ class GaussianProcess():
 
 
     def update_joint(self,xs,ys):
-        xs_old=copy.copy(list(self.data.keys()))
-        filter=lambda x:x not in xs_old
-        vfilter=np.vectorize(filter)
-        mask=vfilter(xs)
-        xs_star=xs[mask]
 
         # We need to average all the observations for common x values in xs and old_xs. We use the data dict for this.
         self.add_data(xs,ys)
         mean_star=self.vmean_func(xs)
+        all_xs=self.data.keys()
+        # This doesn't reuse the existing covariance matrix so it is expensive
+        covariance_star=np.array([[self.kernel(x_i,x_j) for x_j in all_xs] for x_i in all_xs])
 
-        # Avoid recomputing te kernel for unchanged indices
-        # covariance_star=np.array([[self.kernel(x_i,x_j) for x_j in xs] for x_i in xs])
-
-        K_22=np.array([[self.kernel(x_i,x_j) for x_j in xs_star] for x_i in xs_star])
-        K_21=np.array([[self.kernel(x_i,x_j) for x_j in xs_old] for x_i in xs_star])
-        K_12=K_21.T
-        K_11=np.array(self.joint_dist.variance) if isinstance(self.joint_dist,Normal) else self.joint_dist.covariance
-        covariance_star=np.vstack((np.hstack((K_11,K_12)),np.hstack((K_21,K_22))))
-
-        if isinstance(self.joint_dist,Normal):
-            self.joint_dist=MultivariateNormal(mean_star,covariance_star)
+        if len(all_xs)==1:
+            self.joint_dist=Normal(mean_star,covariance_star)
         else:
-            self.joint_dist.mean=mean_star
-            self.joint_dist.covariance=covariance_star
+            self.joint_dist=MultivariateNormal(mean_star,covariance_star)
 
 
     def infer(self,xs_star):
