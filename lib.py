@@ -1,4 +1,41 @@
 import numpy as np
+import pandas as pd
+import requests
+
+
+
+def fetch_epias_exit_nomination(start,end):
+    # datetime arguments should have TR time tzinfo
+    assert (start.tzinfo is not None) and (end.tzinfo is not None)
+
+    # EPIAS API expects dates to be in the ISO 8601 format.
+    # JSON has a different syntax than Python. It needs double quotes, not single quotes!
+    payload={
+      "endDate":end.isoformat(),
+      "startDate":start.isoformat(),
+      "page": {
+        "sort": {
+          "direction": "ASC",
+          "field": "date"
+        }
+      }
+    }
+
+    # HTTP POST request with the data
+    # Disconnect from the current Colab instance and connect to another one if you get HTTPConnection erros.
+    response = requests.post('https://seffaflik.epias.com.tr/natural-gas-service/v1/transmission/data/exit-nomination',json=payload)
+
+    if response.status_code!=200:
+        raise requests.RequestException()
+    else:
+        pass
+
+    data=response.json()
+    df=pd.DataFrame.from_dict(data['items'])
+    # Revert back from the ISO 8601 format to the datetime objects
+    df['date']=df['date'].map(lambda x: dt.datetime.fromisoformat(x))
+
+    return df
 
 # https://waterprogramming.wordpress.com/2018/09/04/implementation-of-the-moving-average-filter-using-convolution/
 def moving_average(data, window_size):
