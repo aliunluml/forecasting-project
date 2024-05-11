@@ -141,6 +141,8 @@ def main():
     # print(ys[:10])
     # print(xs_star[:3])
 
+    # Looked at how they do the visualization in the following. Otherwise, implemented from maths.
+    # https://github.com/peterroelants/peterroelants.github.io/blob/main/notebooks/gaussian_process/gaussian-process-tutorial.ipynb
     predictive=model.infer(xs_star)
     fs=predictive.sample(6)
     # fig1=plt.subplots()
