@@ -148,7 +148,10 @@ def main():
     # fig1=plt.subplots()
     for i in range(6):
         f=fs[i,:]
-        plt.plot(xs_star,f)
+        # plt.plot(xs_star,f)
+        plt.plot(test_df['date'][:30],f)
+    std_dev=np.sqrt(np.diag(predictive.covariance))
+    plt.fill_between(test_df['date'][:30], predictive.mean-2*std_dev, predictive.mean+2*std_dev, color='red',alpha=0.15, label='$2 \sigma_{2|1}$')
     plt.show()
 
 if __name__ == "__main__":
