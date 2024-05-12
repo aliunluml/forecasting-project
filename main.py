@@ -140,7 +140,7 @@ def main():
     # figure3(autocorrelation_values,max_lags=365)
 
     # # =============================GP REGRESSION=============================
-    #
+
     # # Initial GP hyperparameters before tuning
     # variance=1e4
     # a_year,a_quarter,a_month,a_week=(1e-3,5e-2,1e-1,0.2)
@@ -195,26 +195,69 @@ def main():
     #
     # # plt.show()
     # plt.savefig("gp.png")
-
+    #
 
     # =============================LINEAR AUTOREGRESSION=============================
 
-    xs=train_df.index.to_numpy()
-    ys=train_df['exitNominationAmount'].to_numpy()
-    standard_ys=preprocessing(ys)
+    k0=np.zeros(len(df))
+    k1=np.zeros(len(df))
+    k2=np.zeros(len(df))
+    k3=np.zeros(len(df))
+    scales=[3,7,30,90]
 
-    order=12
-    monthly_ar=NonstationaryAR(12)
-    a=1e-1
-    monthly_ar=ridge_autoregression(monthly_ar,standard_ys,a)
-    preds=monthly_ar.infer(standard_ys)
-    ys_hat=destandardize(preds,np.mean(ys),np.std(ys))
+    for i in range(4):
 
-    plt.plot(train_df['date'][order-1:],ys_hat,color='b')
-    plt.plot(train_df['date'],ys,color='k')
+        train_xs=train_df.index.to_numpy()
+        train_ys=train_df['exitNominationAmount'].to_numpy()
+        standard_train_ys=preprocessing(train_ys)
+
+        order=scales[i]
+        monthly_ar=NonstationaryAR(order)
+        a=1e-1
+        monthly_ar=ridge_autoregression(monthly_ar,standard_train_ys,a)
+        preds=monthly_ar.infer(standard_train_ys)
+        train_ys_hat=destandardize(preds,np.mean(train_ys),np.std(train_ys))
+
+        plt.plot(train_df['date'][order-1:],train_ys_hat,color='b')
+        plt.plot(train_df['date'],train_ys,color='k')
+
+        test_xs=test_df.index.to_numpy()
+        test_ys=test_df['exitNominationAmount'].to_numpy()
+        standard_test_ys=preprocessing(test_ys)
+        test_ys_hat=destandardize(monthly_ar.infer(standard_test_ys),np.mean(train_ys),np.std(train_ys))
+
+
+        plt.plot(test_df['date'][order-1:],test_ys_hat,color='r')
+        plt.plot(test_df['date'],test_ys,color='k')
+
+        plt.title(f"Linear Autoregression (AR({order}))")
+        plt.xlabel('Days')
+        # # Gas is measured in standard cubic meters.
+        plt.ylabel('Transmission Output Volume ($Sm^3$)')
+        plt.savefig("ar.png")
+        plt.show()
+
+        print("MASE")
+        print(mean_absolute_scaled_err(test_df['exitNominationAmount'].to_numpy()[order-1:],test_ys_hat))
+
+        exec(f"np.put(k{i},test_xs[order-1:],test_ys_hat)")
+        exec(f"np.put(k{i},train_xs[order-1:],train_ys_hat)")
+
+    ensemble_preds=(k0+k1+k2+k3)/4
+
+    plt.plot(train_df['date'],ensemble_preds[:1460],color='b')
+    plt.plot(test_df['date'],ensemble_preds[1460:],color='r')
+    plt.plot(df['date'],df['exitNominationAmount'],color='k')
+
+    plt.title(f"Ensemble Linear Autoregression of ARs")
+    plt.xlabel('Days')
+    # # Gas is measured in standard cubic meters.
+    plt.ylabel('Transmission Output Volume ($Sm^3$)')
+    plt.savefig("ar.png")
     plt.show()
 
-    print(preds.shape)
+    print("MASE")
+    print(mean_absolute_scaled_err(test_df['exitNominationAmount'].to_numpy(),ensemble_preds[1460:]))
 
 
 if __name__ == "__main__":
