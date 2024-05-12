@@ -4,6 +4,14 @@ import datetime as dt
 import requests
 
 
+# MASE
+def mean_absolute_scaled_err(targets,preds):
+    naive_preds_mae=np.abs(targets[1:]-targets[:-1]).mean()
+    errors=(targets-preds)
+    scaled_errors=errors/naive_preds_mae
+    result=np.abs(scaled_errors).mean()
+    return result
+
 
 def fetch_epias_exit_nomination(start,end):
     # datetime arguments should have TR time tzinfo

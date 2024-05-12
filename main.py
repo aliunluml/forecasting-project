@@ -152,6 +152,9 @@ def main():
     #     plt.plot(train_df['date'],f)
     #     plt.plot(test_df['date'],f_star)
 
+    print("MASE")
+    print(mean_absolute_scaled_err(test_df['exitNominationAmount'].to_numpy(),predictive.mean))
+
     plt.plot(df['date'],df['exitNominationAmount'],linestyle='dashed',color='k',zorder=1)
     plt.plot(test_df['date'],predictive.mean,color='r',zorder=2)
     plt.plot(train_df['date'], model.joint_dist.mean,color='b',zorder=3)
