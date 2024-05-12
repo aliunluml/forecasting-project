@@ -94,33 +94,33 @@ def main():
     print(f"Testing set size: {len(test_df)}")
 
     # Plot the train-test split
-    figure1(train_df,test_df)
+    # figure1(train_df,test_df)
 
     # Crossvalidation folds
     fold_length=len(train_df)//(NUM_FOLDS+1)
     folds=[(train_df[0:(i+1)*fold_length],train_df[(i+1)*fold_length:(i+2)*fold_length]) for i in range(0,NUM_FOLDS)]
 
     # Plot the 3rd crossvalidation fold
-    figure1(*folds[2])
+    # figure1(*folds[2])
 
     # ===========================DATA DECOMPOSITION===========================
 
     ys = df['exitNominationAmount'].to_numpy()
     yearly_trend, yearly_seasonal, yearly_residual = decompose_timeseries(ys, 365)
-    plot_components(df['date'], ys, yearly_trend, yearly_seasonal, yearly_residual)
+    # plot_components(df['date'], ys, yearly_trend, yearly_seasonal, yearly_residual)
 
     monthly_trend, monthly_seasonal, monthly_residual = decompose_timeseries(ys, 31)
-    plot_components(df['date'], ys, monthly_trend, monthly_seasonal, monthly_residual)
+    # plot_components(df['date'], ys, monthly_trend, monthly_seasonal, monthly_residual)
 
     # ===========================DATA AUTOCORRELATION===========================
 
     autocorrelation_values = autocorr(ys,max_lags=365)
-    figure3(autocorrelation_values,max_lags=365)
+    # figure3(autocorrelation_values,max_lags=365)
 
     # =============================GP REGRESSION=============================
 
     # Initial GP hyperparameters before tuning
-    variance=1e-2
+    variance=1e4
     a_year,a_quarter,a_month,a_week=(1e-3,5e-2,1e-1,0.2)
     b=0.5
 
@@ -150,6 +150,7 @@ def main():
         f=fs[i,:]
         # plt.plot(xs_star,f)
         plt.plot(test_df['date'][:30],f)
+    plt.plot(test_df['date'][:30],test_df['exitNominationAmount'][:30],linestyle='dashed')
     std_dev=np.sqrt(np.diag(predictive.covariance))
     plt.fill_between(test_df['date'][:30], predictive.mean-2*std_dev, predictive.mean+2*std_dev, color='red',alpha=0.15, label='$2 \sigma_{2|1}$')
     plt.show()

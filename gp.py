@@ -73,7 +73,9 @@ class GaussianProcess():
                 K_21=np.array([[self.kernel(x_star,x_j) for x_j in xs]])
                 K_12=K_21.T
                 K_11=self.joint_dist.covariance
-                return self.prior_dist.mean+K_21@np.linalg.inv(K_11)@(self.vmean_func(xs)-self.prior_dist.mean)
+                # Avoid recursion as self.vmean_func(xs)=self.joint_dist.mean
+                # return self.prior_dist.mean+K_21@np.linalg.inv(K_11)@(self.vmean_func(xs)-self.prior_dist.mean)
+                return self.prior_dist.mean+K_21@np.linalg.inv(K_11)@(self.joint_dist.mean-self.prior_dist.mean)
 
         vmean_func=np.vectorize(mean_func)
         result= vmean_func(xs_star)
@@ -133,7 +135,9 @@ class GaussianProcess():
         K_12=K_21.T
         K_11=self.joint_dist.covariance
 
-        conditional_mean_star=self.vmean_func(xs_star)+K_21@np.linalg.inv(K_11)@(ys-self.vmean_func(xs))
+        # Avoid recursion as self.vmean_func(xs)=self.joint_dist.mean
+        # conditional_mean_star=self.vmean_func(xs_star)+K_21@np.linalg.inv(K_11)@(ys-self.vmean_func(xs))
+        conditional_mean_star=self.vmean_func(xs_star)+K_21@np.linalg.inv(K_11)@(ys-self.joint_dist.mean)
         conditional_covariance_star=K_22-K_21@np.linalg.inv(K_11)@K_21.T
 
         marginal_dist=MultivariateNormal(conditional_mean_star,conditional_covariance_star)
