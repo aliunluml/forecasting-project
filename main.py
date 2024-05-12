@@ -131,12 +131,12 @@ def main():
     model=GaussianProcess(kernel)
 
     # Treating each day as an integer value. We can do this because of the equally distanced daily measurements in the dataset.
-    xs=train_df.index.to_numpy()[:10]
-    ys=train_df['exitNominationAmount'].to_numpy()[:10]
+    xs=train_df.index.to_numpy()
+    ys=train_df['exitNominationAmount'].to_numpy()
 
     model.update_joint(xs,ys)
     # Respective pandas indices from the original df rows.
-    xs_star=test_df.index.to_numpy()[:30]
+    xs_star=test_df.index.to_numpy()
     # print(xs[:10])
     # print(ys[:10])
     # print(xs_star[:3])
@@ -144,16 +144,32 @@ def main():
     # Looked at how they do the visualization in the following. Otherwise, implemented from maths.
     # https://github.com/peterroelants/peterroelants.github.io/blob/main/notebooks/gaussian_process/gaussian-process-tutorial.ipynb
     predictive=model.infer(xs_star)
-    fs=predictive.sample(6)
-    # fig1=plt.subplots()
-    for i in range(6):
-        f=fs[i,:]
-        # plt.plot(xs_star,f)
-        plt.plot(test_df['date'][:30],f)
-    plt.plot(test_df['date'][:30],test_df['exitNominationAmount'][:30],linestyle='dashed')
-    std_dev=np.sqrt(np.diag(predictive.covariance))
-    plt.fill_between(test_df['date'][:30], predictive.mean-2*std_dev, predictive.mean+2*std_dev, color='red',alpha=0.15, label='$2 \sigma_{2|1}$')
-    plt.show()
+    # fs_star=predictive.sample(6)
+    # fs=model.joint_dist.sample(6)
+    # for i in range(6):
+    #     f=fs[i,:]
+    #     f_star=fs_star[i,:]
+    #     plt.plot(train_df['date'],f)
+    #     plt.plot(test_df['date'],f_star)
+
+    plt.plot(df['date'],df['exitNominationAmount'],linestyle='dashed',color='k',zorder=1)
+    plt.plot(test_df['date'],predictive.mean,color='r',zorder=2)
+    plt.plot(train_df['date'], model.joint_dist.mean,color='b',zorder=3)
+    plt.legend(["actual","prediction", "train"], loc="lower right")
+
+    pred_std_dev=np.sqrt(np.diag(predictive.covariance))
+    plt.fill_between(test_df['date'], predictive.mean-2*pred_std_dev, predictive.mean+2*pred_std_dev, color='red',alpha=0.15, label='$2 \sigma_{2|1}$')
+
+    joint_std_dev=np.sqrt(np.diag(model.joint_dist.covariance))
+    plt.fill_between(train_df['date'], model.joint_dist.mean-2*joint_std_dev, model.joint_dist.mean+2*joint_std_dev, color='red',alpha=0.15, label='$2 \sigma_{2|1}$')
+
+    plt.title('GP Regression')
+    plt.xlabel('Days')
+    # Gas is measured in standard cubic meters.
+    plt.ylabel('Transmission Output Volume ($Sm^3$)')
+
+    # plt.show()
+    plt.savefig("gp.png")
 
 if __name__ == "__main__":
     main()
