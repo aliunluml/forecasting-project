@@ -15,6 +15,10 @@ def preprocessing(ys):
     standardized=(ys-np.mean(ys))/np.std(ys)
     return standardized
 
+def destandardize(ys, mean, std):
+    result=ys*std+mean
+    return result
+
 
 def ridge_autoregression(model,ys,a):
 
@@ -199,10 +203,18 @@ def main():
     ys=train_df['exitNominationAmount'].to_numpy()
     standard_ys=preprocessing(ys)
 
+    order=12
     monthly_ar=NonstationaryAR(12)
     a=1e-1
     monthly_ar=ridge_autoregression(monthly_ar,standard_ys,a)
-    preds=monthly_ar.infer(ys)
+    preds=monthly_ar.infer(standard_ys)
+    ys_hat=destandardize(preds,np.mean(ys),np.std(ys))
+
+    plt.plot(train_df['date'][order-1:],ys_hat,color='b')
+    plt.plot(train_df['date'],ys,color='k')
+    plt.show()
+
+    print(preds.shape)
 
 
 if __name__ == "__main__":
