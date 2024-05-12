@@ -4,6 +4,10 @@ import datetime as dt
 import requests
 
 
+def mean_squared_err(targets,preds):
+    mse=np.mean((targets-preds)**2)
+    return mse
+
 # MASE
 def mean_absolute_scaled_err(targets,preds):
     naive_preds_mae=np.abs(targets[1:]-targets[:-1]).mean()
